@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Renewable Energy Analytics Platform | Executive Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Plotly.js CDN -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700 sticky top-0 z-50 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-amber-500 to-emerald-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-emerald-500/20">
+                ⚡
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-200 to-amber-300 bg-clip-text text-transparent">
+                    Renewable Energy Clustering & Storage Engine
+                </h1>
+                <p class="text-xs text-slate-400">Apache HBase NoSQL • Relational Metadata • FastAPI REST • ML Analytics</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <button onclick="configureApiUrl()" id="backend-badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition cursor-pointer" title="Click to configure backend API endpoint">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2" id="backend-pulse"></span>
+                <span id="backend-status-text">FastAPI: Online</span>
+            </button>
+            <span id="hbase-badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/30">
+                HBase: Engine
+            </span>
+            <button onclick="configureApiUrl()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1.5 rounded-md font-medium transition flex items-center space-x-1" title="Configure Backend API URL">
+                <span>⚙️ API URL</span>
+            </button>
+            <a id="api-docs-link" href="/docs" target="_blank" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-md font-medium transition">
+                API Docs ↗
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
+
+        <!-- ESG & Performance Highlights Banner -->
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-5 shadow-sm">
+                <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Generation</div>
+                <div class="text-2xl font-bold text-white mt-1" id="kpi-gen">-- MWh</div>
+                <div class="text-xs text-emerald-400 mt-2 flex items-center">
+                    <span>⚡ Solar, Wind & Hydro</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-5 shadow-sm">
+                <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">CO₂ Emissions Displaced</div>
+                <div class="text-2xl font-bold text-emerald-400 mt-1" id="kpi-co2">-- Tons</div>
+                <div class="text-xs text-slate-400 mt-2">
+                    <span id="kpi-trees">~-- mature trees equiv.</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-5 shadow-sm">
+                <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Estimated Revenue</div>
+                <div class="text-2xl font-bold text-amber-300 mt-1" id="kpi-revenue">$--</div>
+                <div class="text-xs text-slate-400 mt-2">Based on $0.09 / kWh PPA</div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-5 shadow-sm">
+                <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">HBase Telemetry Ingested</div>
+                <div class="text-2xl font-bold text-sky-400 mt-1" id="kpi-rows">--</div>
+                <div class="text-xs text-slate-400 mt-2">Reverse-Chrono Row Keys</div>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex space-x-2 border-b border-slate-700 pb-2 overflow-x-auto">
+            <button onclick="switchTab('clustering')" data-tab="clustering" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-emerald-400 text-emerald-400 transition whitespace-nowrap">
+                Clustering & PCA Landscape
+            </button>
+            <button onclick="switchTab('analytics')" data-tab="analytics" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition whitespace-nowrap">
+                Feature Heatmaps & Transitions
+            </button>
+            <button onclick="switchTab('simulation')" data-tab="simulation" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition whitespace-nowrap">
+                What-If Physics Simulator
+            </button>
+            <button onclick="switchTab('alerts')" data-tab="alerts" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition whitespace-nowrap">
+                Diagnostics & Alert Feed
+            </button>
+            <button onclick="switchTab('hbase')" data-tab="hbase" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition whitespace-nowrap">
+                HBase NoSQL Row Scanner
+            </button>
+        </nav>
+
+        <!-- Tab 1: Clustering & PCA -->
+        <div id="tab-clustering" class="tab-pane space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- 2D PCA Scatter -->
+                <div class="lg:col-span-2 bg-slate-800 border border-slate-700/60 rounded-xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-base font-semibold text-white">2D PCA Dimensionality Reduction</h2>
+                            <p class="text-xs text-slate-400">Projection of Multi-variate Operational State into 2 Principal Components</p>
+                        </div>
+                        <button onclick="loadPCAChart()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1 rounded">Refresh</button>
+                    </div>
+                    <div id="pca-chart" class="w-full h-80"></div>
+                </div>
+
+                <!-- Radar Profile Chart -->
+                <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-base font-semibold text-white">Cluster Operational Fingerprints</h2>
+                            <p class="text-xs text-slate-400">Normalized Feature Medians</p>
+                        </div>
+                    </div>
+                    <div id="radar-chart" class="w-full h-80"></div>
+                </div>
+            </div>
+
+            <!-- Algorithm Hyperparameter Tuner -->
+            <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-5 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-sm font-semibold text-white">Online Model Re-Training</h3>
+                    <p class="text-xs text-slate-400">Fit new clusters dynamically and persist assignments to HBase cf_analytics</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <select id="algo-select" class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-400">
+                        <option value="kmeans">K-Means (k=4)</option>
+                        <option value="minibatch">MiniBatch K-Means</option>
+                        <option value="dbscan">DBSCAN (Density-Based)</option>
+                        <option value="gmm">Gaussian Mixture Models</option>
+                    </select>
+                    <button onclick="trainClustering()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
+                        Execute Pipeline
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Feature Analytics & Heatmaps -->
+        <div id="tab-analytics" class="tab-pane hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Correlation Heatmap -->
+                <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-5">
+                    <h2 class="text-base font-semibold text-white mb-1">Feature Correlation Matrix</h2>
+                    <p class="text-xs text-slate-400 mb-4">Pearson Correlation between ambient conditions and power yields</p>
+                    <div id="corr-chart" class="w-full h-80"></div>
+                </div>
+
+                <!-- Cluster Transitions -->
+                <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-5">
+                    <h2 class="text-base font-semibold text-white mb-1">Markovian Regime Transition Matrix</h2>
+                    <p class="text-xs text-slate-400 mb-4">Empirical probability of shifting between operating states over time</p>
+                    <div id="trans-chart" class="w-full h-80"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: What-If Physics Simulator -->
+        <div id="tab-simulation" class="tab-pane hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Controls -->
+                <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-5 space-y-4">
+                    <h2 class="text-base font-semibold text-white">Scenario Parameters</h2>
+                    <p class="text-xs text-slate-400">Simulate climate disruptions and panel degradation</p>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Target Plant</label>
+                        <select id="sim-plant" class="w-full bg-slate-900 border border-slate-700 text-xs rounded-lg p-2 text-slate-200">
+                            <option value="SOLAR_FARM_01">SOLAR_FARM_01 (4.5 MW Photovoltaic)</option>
+                            <option value="WIND_TURBINE_PARK_A">WIND_TURBINE_PARK_A (6.0 MW Wind)</option>
+                            <option value="HYDRO_PUMP_STATION_1">HYDRO_PUMP_STATION_1 (5.0 MW Hydro)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span>Solar Irradiance Delta</span>
+                            <span id="val-solar">0%</span>
+                        </div>
+                        <input id="sim-solar" type="range" min="-50" max="50" value="0" step="5" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('val-solar').innerText = this.value + '%'">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span>Wind Speed Delta</span>
+                            <span id="val-wind">0%</span>
+                        </div>
+                        <input id="sim-wind" type="range" min="-50" max="50" value="0" step="5" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('val-wind').innerText = this.value + '%'">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span>Panel Dust / Soiling Loss</span>
+                            <span id="val-soiling">0%</span>
+                        </div>
+                        <input id="sim-soiling" type="range" min="0" max="30" value="0" step="1" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('val-soiling').innerText = this.value + '%'">
+                    </div>
+
+                    <button onclick="runSimulation()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2.5 rounded-lg transition mt-2">
+                        Run Physics Simulation
+                    </button>
+                </div>
+
+                <!-- Results Output -->
+                <div class="lg:col-span-2 bg-slate-800 border border-slate-700/60 rounded-xl p-5 flex flex-col justify-center">
+                    <h2 class="text-base font-semibold text-white mb-2">Simulated Outcome</h2>
+                    <div class="grid grid-cols-2 gap-4 my-4">
+                        <div class="bg-slate-900 border border-slate-700/50 rounded-lg p-4">
+                            <div class="text-xs text-slate-400">Simulated Generation</div>
+                            <div class="text-2xl font-bold text-amber-300 mt-1" id="sim-result-power">-- kW</div>
+                            <div class="text-xs text-emerald-400 mt-1" id="sim-result-delta">Delta: --%</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-700/50 rounded-lg p-4">
+                            <div class="text-xs text-slate-400">Operational Assessment</div>
+                            <div class="text-sm font-semibold text-slate-200 mt-1" id="sim-result-impact">Awaiting execution...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Diagnostics & Alerts -->
+        <div id="tab-alerts" class="tab-pane hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-base font-semibold text-white">Fleet Diagnostics & Predictive Maintenance</h2>
+                        <p class="text-xs text-slate-400">Anomalous telemetry flags evaluated via Distance-to-Centroid ML heuristics</p>
+                    </div>
+                    <button onclick="evaluateAlerts()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-medium transition">
+                        Run Diagnostics Sweep
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="p-3">Severity</th>
+                                <th class="p-3">Plant</th>
+                                <th class="p-3">Root Cause Diagnosis</th>
+                                <th class="p-3">Prescribed Action</th>
+                                <th class="p-3">Anomaly Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alerts-table-body" class="divide-y divide-slate-700/50">
+                            <tr>
+                                <td colspan="5" class="p-4 text-center text-slate-500">Click 'Run Diagnostics Sweep' to inspect real-time anomaly scores.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: HBase NoSQL Browser -->
+        <div id="tab-hbase" class="tab-pane hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-base font-semibold text-white">Apache HBase Table Scanner (`telemetry_readings`)</h2>
+                        <p class="text-xs text-slate-400">Displaying column families: cf_telemetry, cf_environment, cf_analytics</p>
+                    </div>
+                    <button onclick="loadHBaseRows()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg font-medium transition">
+                        Scan Head (25 Rows)
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="p-3">Row Key</th>
+                                <th class="p-3">Plant Type</th>
+                                <th class="p-3">Active Power (kW)</th>
+                                <th class="p-3">Solar (W/m²)</th>
+                                <th class="p-3">Wind (m/s)</th>
+                                <th class="p-3">Cluster Label</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hbase-table-body" class="divide-y divide-slate-700/50">
+                            <tr>
+                                <td colspan="6" class="p-4 text-center text-slate-500">Loading HBase rows...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-800 border-t border-slate-700 py-3 text-center text-xs text-slate-500">
+        Renewable Energy Clustering Analysis using Apache HBase • Big Data Technologies
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
