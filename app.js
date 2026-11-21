@@ -258,7 +258,7 @@ function renderFallbackRadar() {
     }, { responsive: true, displayModeBar: false });
 }
 
-// Correlation Heatmap
+// Correlation Heatmap & Detailed Analysis
 async function loadCorrelationChart() {
     try {
         const res = await fetch(`${API_BASE}/api/analytics/correlation`);
@@ -278,11 +278,70 @@ async function loadCorrelationChart() {
                     font: { color: '#94a3b8', size: 9 },
                     margin: { t: 20, r: 20, b: 50, l: 80 }
                 }, { responsive: true, displayModeBar: false });
+
+                // Populate Top Correlated Pairs Table
+                if (data.top_correlations && data.top_correlations.length > 0) {
+                    const tbody = document.getElementById('corr-pairs-body');
+                    if (tbody) {
+                        tbody.innerHTML = "";
+                        data.top_correlations.forEach(pair => {
+                            const row = document.createElement('tr');
+                            row.className = "hover:bg-slate-700/30 transition";
+                            const badgeColor = pair.correlation >= 0.7 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : (pair.correlation >= 0.4 ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30' : 'bg-slate-700 text-slate-300');
+                            row.innerHTML = `
+                                <td class="p-3 font-semibold text-slate-200">${pair.feature_1}</td>
+                                <td class="p-3 font-semibold text-slate-200">${pair.feature_2}</td>
+                                <td class="p-3 font-mono font-bold ${pair.correlation >= 0 ? 'text-emerald-400' : 'text-amber-400'}">${pair.correlation > 0 ? '+' : ''}${pair.correlation}</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-medium ${badgeColor}">${pair.strength}</span></td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                }
+
+                // Populate Key Insights
+                if (data.key_insights && data.key_insights.length > 0) {
+                    const container = document.getElementById('corr-insights-container');
+                    if (container) {
+                        container.innerHTML = "";
+                        data.key_insights.forEach(ins => {
+                            const div = document.createElement('div');
+                            div.className = "bg-slate-900/60 p-3 rounded-lg border border-slate-700/40 text-xs text-slate-300";
+                            div.innerHTML = ins;
+                            container.appendChild(div);
+                        });
+                    }
+                }
                 return;
             }
         }
     } catch (e) {
         console.warn("Could not load Correlation chart:", e);
+    }
+}
+
+// Model Accuracy & Clustering Quality Evaluation Metrics
+async function loadAccuracyMetrics() {
+    try {
+        const res = await fetch(`${API_BASE}/api/clustering/accuracy`);
+        if (res.ok) {
+            const data = await res.json();
+            const elAcc = document.getElementById('metric-model-acc');
+            const elRating = document.getElementById('metric-model-rating');
+            const elAnom = document.getElementById('metric-anom-acc');
+            const elPca = document.getElementById('metric-pca-acc');
+            const elCohesion = document.getElementById('metric-cohesion-acc');
+            const elDetail = document.getElementById('metric-sil-detail');
+
+            if (elAcc) elAcc.innerText = `${data.overall_model_accuracy_pct}%`;
+            if (elRating) elRating.innerText = data.evaluation_rating || "EXCELLENT";
+            if (elAnom) elAnom.innerText = `${data.anomaly_detection_accuracy_pct}%`;
+            if (elPca) elPca.innerText = `${data.pca_variance_accuracy_2d_pct}% (2D) / ${data.pca_variance_accuracy_3d_pct}% (3D)`;
+            if (elCohesion) elCohesion.innerText = `${data.clustering_cohesion_quality_pct}%`;
+            if (elDetail) elDetail.innerText = `Silhouette: ${data.silhouette_score} • DB: ${data.davies_bouldin_index}`;
+        }
+    } catch (e) {
+        console.warn("Could not load accuracy metrics from API:", e);
     }
 }
 
@@ -446,8 +505,10 @@ async function trainClustering() {
 
 function refreshAllDashboardData() {
     loadKPIs();
+    loadAccuracyMetrics();
     loadPCAChart();
     loadRadarChart();
+    loadCorrelationChart();
 }
 
 // Initial Load
